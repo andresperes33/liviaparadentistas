@@ -54,18 +54,17 @@ class MessageProcessingService:
 
             user = UserService.get_user_by_phone(sender)
             
-            # 1. Usuário não existe -> Roteado para o Agente de Vendas Compartilhado
+            # 1. Usuário não existe -> Responde com Boas-vindas e Link Kirvano
             if not user:
                 if content:
                     ai_reply = LiviaAgentService.get_agent_response(sender, content, "sales")
                     evolution_client.send_text(sender, ai_reply)
                 return
 
-            # 2. Usuário existe mas está inativo -> Roteado para Vendas ou Renovação
+            # 2. Usuário existe mas está inativo (Limite atingido ou Expirado) -> Responde com Upgrade
             if not SubscriptionService.check_user_access(user):
                 if content:
-                    agent_type = "renewal" if user.assinatura_status in ["expirada", "cancelada", "pagamento_falhou"] else "sales"
-                    ai_reply = LiviaAgentService.get_agent_response(sender, content, agent_type)
+                    ai_reply = LiviaAgentService.get_agent_response(sender, content, "renewal")
                     evolution_client.send_text(sender, ai_reply)
                     
                     transaction = Transaction.objects.create(user=user)
