@@ -30,12 +30,10 @@ class EvolutionAPIClient:
     def send_text(self, number: str, text: str):
         payload = {
             "number": number,
+            "text": text,
             "options": {
                 "delay": 1200,
                 "presence": "composing"
-            },
-            "textMessage": {
-                "text": text
             }
         }
         return self._post("sendText", payload)
