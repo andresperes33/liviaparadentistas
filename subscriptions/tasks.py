@@ -45,11 +45,11 @@ def process_kirvano_event(log_id: int):
         logger.error(f"Error processing Kirvano Webhook log_id {log_id}: {e}")
 
 def _send_and_log_evolution_msg(user: User, text: str):
-    if not user.phone:
+    if not user.telefone:
         logger.error(f"Cannot send Evolution API message, User {user.email} has no phone mapped.")
         return
         
-    evolution_client.send_text(user.phone, text)
+    evolution_client.send_text(user.telefone, text)
     transaction = Transaction.objects.create(user=user)
     Message.objects.create(
         user=user,
@@ -74,8 +74,8 @@ def handle_sale_approved(email, phone, name, plan, sub_id, next_billing):
     user.proxima_cobranca = next_billing
     user.subscription_id = sub_id
     # Atualizar telefone caso estivesse nulo ou desatualizado pela Kirvano
-    if phone and not user.phone:
-        user.phone = phone
+    if phone and not user.telefone:
+        user.telefone = phone
     user.save()
     
     logger.info(f"[Subscription] Acesso liberado para {email}")

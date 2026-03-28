@@ -91,7 +91,7 @@ class MessageProcessingService:
                 
                 Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.INBOUND, content=content)
                 Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.OUTBOUND, content=reply_text)
-                evolution_client.send_text(user.phone, reply_text)
+                evolution_client.send_text(user.telefone, reply_text)
                 
             elif "audioMessage" in msg_type_str:
                 media_url = msg_obj.get("audioMessage", {}).get("url", "")

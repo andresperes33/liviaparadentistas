@@ -23,5 +23,5 @@ class SubscriptionService:
         return f"https://liviaparadentistas.com.br/renovar/{user.username}"
         
     @staticmethod
-    def get_signup_link(phone: str) -> str:
-        return f"https://liviaparadentistas.com.br/assinar?phone={phone}"
+    def get_signup_link(telefone: str) -> str:
+        return f"https://liviaparadentistas.com.br/assinar?phone={telefone}"

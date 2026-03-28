@@ -8,12 +8,12 @@ logger = logging.getLogger("django")
 
 class LiviaAgentService:
     @staticmethod
-    def get_agent_response(phone: str, user_message: str, agent_type: str = "sales") -> str:
+    def get_agent_response(telefone: str, user_message: str, agent_type: str = "sales") -> str:
         """
         Consulta o histórico no Redis e chama a IA na LangChain com o prompt adequado.
         """
-        ConversationMemory.add_message(phone, "user", user_message)
-        history = ConversationMemory.get_history(phone)
+        ConversationMemory.add_message(telefone, "user", user_message)
+        history = ConversationMemory.get_history(telefone)
         
         system_prompt = SALES_AGENT_PROMPT if agent_type == "sales" else RENEWAL_AGENT_PROMPT
         
@@ -30,11 +30,11 @@ class LiviaAgentService:
             response = llm.invoke(langchain_messages)
             
             ai_reply = response.content.strip()
-            ConversationMemory.add_message(phone, "assistant", ai_reply)
+            ConversationMemory.add_message(telefone, "assistant", ai_reply)
             return ai_reply
             
         except Exception as e:
             logger.error(f"[BotService] LangChain API falhou: {e}")
             fallback = "Desculpe, estou em manutenção e não pude processar sua mensagem."
-            ConversationMemory.add_message(phone, "assistant", fallback)
+            ConversationMemory.add_message(telefone, "assistant", fallback)
             return fallback

@@ -3,9 +3,9 @@ from .models import Subscription, KirvanoWebhookLog
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ("user", "active", "expires_at", "is_valid")
+    list_display = ('user', 'status', 'next_billing_date', 'plan_name')
     list_filter = ("active",)
-    search_fields = ("user__username", "user__phone")
+    search_fields = ("user__username", "user__telefone")
 
 @admin.register(KirvanoWebhookLog)
 class KirvanoWebhookLogAdmin(admin.ModelAdmin):

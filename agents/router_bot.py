@@ -33,9 +33,9 @@ class LiviaRouterBot:
 
     @staticmethod
     def process_message(user: User, user_message: str, transaction) -> str:
-        phone = user.phone
-        ConversationMemory.add_message(phone, "user", user_message)
-        history = ConversationMemory.get_history(phone)
+        telefone = user.telefone
+        ConversationMemory.add_message(telefone, "user", user_message)
+        history = ConversationMemory.get_history(telefone)
         
         system_prompt = LiviaRouterBot._build_system_prompt()
         langchain_messages = [SystemMessage(content=system_prompt)]
