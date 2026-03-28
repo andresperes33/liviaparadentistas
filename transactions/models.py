@@ -9,20 +9,19 @@ def generate_identificador():
     return ''.join(random.choice(chars) for _ in range(3))
 
 class Transaction(models.Model):
-    # id padrão AutoField (int8) será criado automaticamente pelo Django
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transactions")
+    # id (AutoField)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transactions", verbose_name="user_id")
     
-    # Campos alinhados com o exemplo do cliente
-    identificador = models.CharField("Identificador", max_length=10, null=True, blank=True)
-    descricao = models.TextField("Descrição", null=True, blank=True)
-    categoria = models.CharField("Categoria", max_length=150, null=True, blank=True)
-    valor = models.DecimalField("Valor", max_digits=12, decimal_places=2, null=True, blank=True)
-    tipo = models.CharField("Tipo", max_length=20, null=True, blank=True)
-    data = models.DateField("Data", null=True, blank=True)
-    esta_pago = models.BooleanField("Está Pago?", default=False)
-    time = models.BigIntegerField("Time (MS)", null=True, blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
+    # Campos com verbose_name exatamente como solicitado
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="created_at")
+    descricao = models.TextField(verbose_name="descricao", null=True, blank=True)
+    categoria = models.CharField(verbose_name="categoria", max_length=150, null=True, blank=True)
+    valor = models.DecimalField(verbose_name="valor", max_digits=12, decimal_places=2, null=True, blank=True)
+    tipo = models.CharField(verbose_name="tipo", max_length=20, null=True, blank=True)
+    data = models.DateField(verbose_name="data", null=True, blank=True)
+    esta_pago = models.BooleanField(verbose_name="esta_pago", default=False)
+    identificador = models.CharField(verbose_name="identificador", max_length=10, null=True, blank=True)
+    time = models.BigIntegerField(verbose_name="time", null=True, blank=True)
     
     class Meta:
         db_table = "transactions"
