@@ -54,22 +54,33 @@ class MessageProcessingService:
 
             user = UserService.get_user_by_phone(sender)
             
-            # 1. Usuário não existe -> Responde com Boas-vindas e Link Kirvano
+            # 1. Usuário não existe -> Mensagem Estática de Boas-vindas e Link Kirvano
             if not user:
-                if content:
-                    ai_reply = LiviaAgentService.get_agent_response(sender, content, "sales")
-                    evolution_client.send_text(sender, ai_reply)
+                welcome_msg = (
+                    "Olá! 👋\n"
+                    "Eu sou a Lívia, sua assistente financeira 🧡\n\n"
+                    "Estou aqui para ajudar você, dentista, a organizar as finanças do seu consultório de forma simples, prática e estratégica 💰🦷\n\n"
+                    "Chega de misturar contas, perder o controle do caixa ou ficar na dúvida sobre para onde está indo o seu dinheiro.\n"
+                    "Vamos colocar sua vida financeira nos trilhos e dar mais tranquilidade para você focar no que realmente importa: seus pacientes e o crescimento do seu consultório 🚀\n\n"
+                    "👉 Para começar, faça seu cadastro por aqui:\n"
+                    "https://pay.kirvano.com/e45b2cc2-243c-43b3-9071-6f8c226450df"
+                )
+                evolution_client.send_text(sender, welcome_msg)
                 return
 
-            # 2. Usuário existe mas está inativo (Limite atingido ou Expirado) -> Responde com Upgrade
+            # 2. Usuário existe mas está inativo (Limite atingido ou Expirado) -> Mensagem Estática de Upgrade
             if not SubscriptionService.check_user_access(user):
-                if content:
-                    ai_reply = LiviaAgentService.get_agent_response(sender, content, "renewal")
-                    evolution_client.send_text(sender, ai_reply)
-                    
-                    transaction = Transaction.objects.create(user=user)
-                    Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.INBOUND, content=content)
-                    Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.OUTBOUND, content=ai_reply)
+                limit_msg = (
+                    "⚠️ Atenção! ⚠️ Detectei que você atingiu o limite de transações do seu plano atual. 😔\n"
+                    "Pra continuar usando a Lívia sem interrupções, recomendo atualizar seu plano para um que atenda melhor às suas necessidades. 🚀💳\n"
+                    "Acesse o link abaixo pra conferir as opções e fazer o upgrade:\n"
+                    "https://pay.kirvano.com/e45b2cc2-243c-43b3-9071-6f8c226450df"
+                )
+                evolution_client.send_text(sender, limit_msg)
+                
+                transaction = Transaction.objects.create(user=user)
+                Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.INBOUND, content=content)
+                Message.objects.create(user=user, transaction=transaction, message_type=Message.MessageType.TEXT, direction=Message.Direction.OUTBOUND, content=limit_msg)
                 return
                 
             # 3. Usuário Válido -> Fluxo de Livia Contábil
