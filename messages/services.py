@@ -42,6 +42,7 @@ class MessageProcessingService:
                 return
                 
             msg_type_str = list(msg_obj.keys())[0] if msg_obj else "unknown"
+            logger.info(f"Message Type: {msg_type_str} | Content keys: {list(msg_obj.keys()) if msg_obj else 'None'}")
             
             content = ""
             if "conversation" in msg_type_str or "extendedTextMessage" in msg_type_str:
