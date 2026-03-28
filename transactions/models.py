@@ -1,28 +1,26 @@
 import random
 import string
+import time
 from django.db import models
 from django.conf import settings
 
-def generate_transaction_id():
+def generate_identificador():
     chars = string.ascii_uppercase + string.digits
     return ''.join(random.choice(chars) for _ in range(3))
 
 class Transaction(models.Model):
-    id = models.CharField(
-        max_length=3,
-        primary_key=True,
-        editable=False
-    )
+    # id padrão AutoField (int8) será criado automaticamente pelo Django
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transactions")
     
-    # Financial Mapping
-    tipo = models.CharField("Tipo", max_length=20, null=True, blank=True)
-    valor = models.DecimalField("Valor", max_digits=12, decimal_places=2, null=True, blank=True)
+    # Campos alinhados com o exemplo do cliente
+    identificador = models.CharField("Identificador", max_length=10, null=True, blank=True)
     descricao = models.TextField("Descrição", null=True, blank=True)
     categoria = models.CharField("Categoria", max_length=150, null=True, blank=True)
-    data_transacao = models.DateField("Data da Transação", null=True, blank=True)
-    status_pagamento = models.CharField("Status de Pagamento", max_length=50, null=True, blank=True)
-    is_financial = models.BooleanField("É Transação Financeira?", default=False)
+    valor = models.DecimalField("Valor", max_digits=12, decimal_places=2, null=True, blank=True)
+    tipo = models.CharField("Tipo", max_length=20, null=True, blank=True)
+    data = models.DateField("Data", null=True, blank=True)
+    esta_pago = models.BooleanField("Está Pago?", default=False)
+    time = models.BigIntegerField("Time (MS)", null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -32,13 +30,11 @@ class Transaction(models.Model):
         verbose_name_plural = "Transações"
         
     def save(self, *args, **kwargs):
-        if not self.id:
-            # Generate ID and ensure uniqueness to avoid collision
-            new_id = generate_transaction_id()
-            while Transaction.objects.filter(id=new_id).exists():
-                new_id = generate_transaction_id()
-            self.id = new_id
+        if not self.identificador:
+            self.identificador = generate_identificador()
+        if not self.time:
+            self.time = int(time.time() * 1000)
         super().save(*args, **kwargs)
         
     def __str__(self):
-        return f"{self.id} - {self.user.username}"
+        return f"{self.id} - {self.identificador} - {self.user.username}"

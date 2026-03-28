@@ -2,6 +2,7 @@ import logging
 import json
 import datetime
 import re
+import time
 from django.db.models import Sum
 from users.models import User
 from transactions.models import Transaction
@@ -57,36 +58,35 @@ class TransactionToolsExecutor:
             transaction = Transaction.objects.create(user=user)
             
         transaction.tipo = tipo
-        # Garantir valor positivo para o banco, a lógica de sinal pode ser tratada na exibição ou conforme o tipo
-        # No modelo original, despesas parecem ser salvas com sinal negativo conforme um comentário, 
-        # mas o prompt diz "Valores de despesa devem ser negativos".
         transaction.valor = float(valor)
         transaction.descricao = descricao
         transaction.categoria = categoria.lower() if categoria else "padrão"
-        transaction.status_pagamento = status
+        
+        # Mapeamento do status para o novo campo booleano
+        transaction.esta_pago = True if status.lower() == "pago" else False
         
         if data:
             match = re.search(r"(\d{2})[-/](\d{2})[-/](\d{4})", data)
             if match:
                 d, m, y = match.groups()
-                transaction.data_transacao = datetime.date(int(y), int(m), int(d))
+                transaction.data = datetime.date(int(y), int(m), int(d))
             else:
-                transaction.data_transacao = datetime.date.today()
+                transaction.data = datetime.date.today()
         else:
-            transaction.data_transacao = datetime.date.today()
+            transaction.data = datetime.date.today()
             
-        transaction.is_financial = True
         transaction.save()
         
+        status_final = "Pago" if transaction.esta_pago else "A receber"
         markdown = f"✅ *{tipo} Registrada com sucesso!*\n\n"
-        markdown += f"🆔 ID: {transaction.id}\n"
+        markdown += f"🆔 ID: {transaction.identificador}\n"
         markdown += f"💰 Valor: R$ {abs(float(valor)):.2f}\n"
         markdown += f"🏷️ Tipo: {'📈' if tipo == 'Receita' else '📉'} {tipo}\n"
         markdown += f"📄 Descrição: {descricao}\n"
         markdown += f"🏷️ Categoria: {categoria}\n"
-        markdown += f"📅 Data: {transaction.data_transacao.strftime('%d-%m-%Y')}\n"
-        markdown += f"📌 Status: {status}\n\n"
-        markdown += f"❌ Para excluir ou editar, envie: {transaction.id}"
+        markdown += f"📅 Data: {transaction.data.strftime('%d-%m-%Y')}\n"
+        markdown += f"📌 Status: {status_final}\n\n"
+        markdown += f"❌ Para excluir ou editar, envie o ID: {transaction.identificador}"
         return {"should_respond_directly": True, "content": markdown}
 
     @staticmethod
@@ -95,24 +95,25 @@ class TransactionToolsExecutor:
         categoria = kwargs.get("categoria", "").lower()
         status = kwargs.get("status")
 
-        qs = Transaction.objects.filter(user=user, is_financial=True)
+        qs = Transaction.objects.filter(user=user)
         if tipo:
             qs = qs.filter(tipo=tipo)
         if categoria:
             qs = qs.filter(categoria=categoria)
         if status and status != "Todos":
-            qs = qs.filter(status_pagamento=status)
+            is_pago = True if status.lower() == "pago" else False
+            qs = qs.filter(esta_pago=is_pago)
 
         return TransactionToolsExecutor._build_report_markdown(qs, f"Consulta: {categoria or 'Geral'}")
 
     @staticmethod
     def _tool_alterar_status_categoria(user: User, categoria: str):
         categoria_norm = categoria.lower()
-        qs = Transaction.objects.filter(user=user, categoria=categoria_norm, status_pagamento="A receber")
+        qs = Transaction.objects.filter(user=user, categoria=categoria_norm, esta_pago=False)
         count = qs.count()
         total = qs.aggregate(Sum('valor'))['valor__sum'] or 0
         
-        qs.update(status_pagamento="Pago")
+        qs.update(esta_pago=True)
         
         markdown = f"✅ *Liquidação Concluída - {categoria.title()}*\n\n"
         markdown += f"Foram atualizados *{count} registro(s)* da categoria *{categoria.title()}*.\n"
@@ -124,18 +125,24 @@ class TransactionToolsExecutor:
 
     @staticmethod
     def _tool_deletar(user: User, codigo: str):
+        codigo_clean = codigo.upper().strip()
         try:
-            trans = Transaction.objects.get(id=codigo.upper(), user=user)
+            # Tenta buscar pelo identificador (VP0) ou ID numérico se for número
+            if codigo_clean.isdigit():
+                trans = Transaction.objects.get(id=int(codigo_clean), user=user)
+            else:
+                trans = Transaction.objects.get(identificador=codigo_clean, user=user)
+                
             desc = trans.descricao
             valor = trans.valor
             trans.delete()
             
-            markdown = f"✅ Foi excluída a transação {codigo.upper()}\n"
+            markdown = f"✅ Foi excluída a transação {codigo_clean}\n"
             markdown += f"🔖 *Descrição:* {desc}\n"
             markdown += f"💸 *Valor:* R$ {abs(float(valor)):.2f}"
             return {"should_respond_directly": True, "content": markdown}
         except Transaction.DoesNotExist:
-            return {"should_respond_directly": True, "content": f"❌ Transação {codigo.upper()} não encontrada."}
+            return {"should_respond_directly": True, "content": f"❌ Transação {codigo_clean} não encontrada."}
 
     @staticmethod
     def _tool_alterar_individual(user: User, tool_name: str, **kwargs):
@@ -143,17 +150,20 @@ class TransactionToolsExecutor:
         if not codigo:
             return {"should_respond_directly": True, "content": "❌ Código da transação não fornecido."}
             
+        codigo_clean = str(codigo).upper().strip()
         try:
-            trans = Transaction.objects.get(id=codigo.upper(), user=user)
+            if codigo_clean.isdigit():
+                trans = Transaction.objects.get(id=int(codigo_clean), user=user)
+            else:
+                trans = Transaction.objects.get(identificador=codigo_clean, user=user)
             
             if tool_name == "Alterar": # Geralmente status para Pago
-                trans.status_pagamento = "Pago"
+                trans.esta_pago = True
             elif tool_name == "Alterar_Categoria":
                 trans.categoria = kwargs.get("nova_categoria", "").lower()
             elif tool_name == "Alterar_Descricao":
                 trans.descricao = kwargs.get("nova_descricao")
             elif tool_name == "Alterar_Valor":
-                # Limpeza de valor já deve ter sido vinda da IA, mas garantimos
                 novo_valor = kwargs.get("novo_valor")
                 if isinstance(novo_valor, str):
                     novo_valor = re.sub(r"[^\d,.-]", "", novo_valor).replace(",", ".")
@@ -161,15 +171,16 @@ class TransactionToolsExecutor:
             
             trans.save()
             
-            markdown = f"✅ Foi alterada a transação {trans.id}\n\n"
+            status_txt = "Pago" if trans.esta_pago else "A receber"
+            markdown = f"✅ Foi alterada a transação {trans.identificador}\n\n"
             markdown += f"🔖 *Descrição:* {trans.descricao}\n"
             markdown += f"🏷️ *Categoria:* {trans.categoria.title()}\n"
-            markdown += f"📌 *Status:* {trans.status_pagamento}\n"
+            markdown += f"📌 *Status:* {status_txt}\n"
             markdown += f"💸 *Valor:* R$ {abs(float(trans.valor)):.2f}"
             return {"should_respond_directly": True, "content": markdown}
             
         except Transaction.DoesNotExist:
-            return {"should_respond_directly": True, "content": f"❌ Transação {codigo.upper()} não encontrada."}
+            return {"should_respond_directly": True, "content": f"❌ Transação {codigo_clean} não encontrada."}
         except Exception as e:
             return {"should_respond_directly": True, "content": f"❌ Erro ao alterar: {str(e)}"}
 
@@ -178,15 +189,14 @@ class TransactionToolsExecutor:
         mes = kwargs.get("mes")
         ano = kwargs.get("ano")
         
-        qs = Transaction.objects.filter(user=user, is_financial=True)
+        qs = Transaction.objects.filter(user=user)
         
         if mes:
-            qs = qs.filter(data_transacao__month=int(mes))
+            qs = qs.filter(data__month=int(mes))
         if ano:
-            qs = qs.filter(data_transacao__year=int(ano))
+            qs = qs.filter(data__year=int(ano))
         else:
-            # Se não informou ano, usa o atual
-            qs = qs.filter(data_transacao__year=datetime.date.today().year)
+            qs = qs.filter(data__year=datetime.date.today().year)
             
         title = f"Relatório Mensal - {mes}/{ano or datetime.date.today().year}"
         return TransactionToolsExecutor._build_report_markdown(qs, title)
@@ -194,15 +204,15 @@ class TransactionToolsExecutor:
     @staticmethod
     def _build_report_markdown(qs, title: str):
         # Receitas Pagas
-        rec_pagas_qs = qs.filter(tipo="Receita", status_pagamento="Pago")
+        rec_pagas_qs = qs.filter(tipo="Receita", esta_pago=True)
         rec_pagas_total = rec_pagas_qs.aggregate(Sum('valor'))['valor__sum'] or 0
         
         # Despesas Pagas
-        desp_pagas_qs = qs.filter(tipo="Despesa", status_pagamento="Pago")
+        desp_pagas_qs = qs.filter(tipo="Despesa", esta_pago=True)
         desp_pagas_total = desp_pagas_qs.aggregate(Sum('valor'))['valor__sum'] or 0
         
         # Receitas A Receber
-        rec_pendentes_qs = qs.filter(tipo="Receita", status_pagamento="A receber")
+        rec_pendentes_qs = qs.filter(tipo="Receita", esta_pago=False)
         rec_pendentes_total = rec_pendentes_qs.aggregate(Sum('valor'))['valor__sum'] or 0
         
         # Cálculos de Saldo
@@ -234,13 +244,12 @@ class TransactionToolsExecutor:
         markdown += "━━━━━━━━━━━━━━━━━━━━\n\n"
         markdown += "📋 *DETALHAMENTO POR CATEGORIA:*\n\n"
         
-        # Agrupar por categoria
         categorias = qs.values_list('categoria', flat=True).distinct()
         for cat in categorias:
             cat_qs = qs.filter(categoria=cat)
-            cat_rec_p = cat_qs.filter(tipo="Receita", status_pagamento="Pago").aggregate(Sum('valor'))['valor__sum'] or 0
-            cat_desp_p = cat_qs.filter(tipo="Despesa", status_pagamento="Pago").aggregate(Sum('valor'))['valor__sum'] or 0
-            cat_rec_a = cat_qs.filter(tipo="Receita", status_pagamento="A receber").aggregate(Sum('valor'))['valor__sum'] or 0
+            cat_rec_p = cat_qs.filter(tipo="Receita", esta_pago=True).aggregate(Sum('valor'))['valor__sum'] or 0
+            cat_desp_p = cat_qs.filter(tipo="Despesa", esta_pago=True).aggregate(Sum('valor'))['valor__sum'] or 0
+            cat_rec_a = cat_qs.filter(tipo="Receita", esta_pago=False).aggregate(Sum('valor'))['valor__sum'] or 0
             
             cat_realizado = float(cat_rec_p) + float(cat_desp_p)
             cat_projetado = cat_realizado + float(cat_rec_a)
@@ -252,12 +261,12 @@ class TransactionToolsExecutor:
         markdown += "━━━━━━━━━━━━━━━━━━━━\n\n"
         markdown += "📋 *TRANSAÇÕES:*\n\n"
         
-        for trans in qs.order_by('-data_transacao')[:15]: # Limite de 15 para não estourar WhatsApp
-            emoji = "🟢" if trans.tipo == "Receita" and trans.status_pagamento == "Pago" else \
+        for trans in qs.order_by('-data')[:15]:
+            emoji = "🟢" if trans.tipo == "Receita" and trans.esta_pago else \
                     "🔴" if trans.tipo == "Despesa" else "🟡"
-            status_txt = "Pago" if trans.status_pagamento == "Pago" else "A receber"
+            status_txt = "Pago" if trans.esta_pago else "A receber"
             
-            markdown += f"{emoji} ID: {trans.id} | R$ {abs(float(trans.valor)):.2f} | {trans.descricao[:20]} | {trans.data_transacao.strftime('%d/%m')} | {status_txt}\n"
+            markdown += f"{emoji} ID: {trans.identificador} | R$ {abs(float(trans.valor)):.2f} | {trans.descricao[:20]} | {trans.data.strftime('%d/%m')} | {status_txt}\n"
 
         if qs.count() > 15:
             markdown += "\n*... e mais registros disponíveis no sistema.*"
