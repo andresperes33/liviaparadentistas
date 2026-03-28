@@ -90,7 +90,7 @@ class LiviaRouterBot:
                 
                 # Se as execuções já produziram a interface visual de saída
                 if final_direct_response:
-                    ConversationMemory.add_message(phone, "assistant", final_direct_response)
+                    ConversationMemory.add_message(telefone, "assistant", final_direct_response)
                     return final_direct_response
                     
                 continue
@@ -98,9 +98,9 @@ class LiviaRouterBot:
             # 2) Sem uso de ferramentas (resposta direta de Generico/Chat)
             else:
                 ai_reply = response.content.strip()
-                ConversationMemory.add_message(phone, "assistant", ai_reply)
+                ConversationMemory.add_message(telefone, "assistant", ai_reply)
                 return ai_reply
                 
         fallback = "Tive um problema ao conectar com minhas ferramentas internas."
-        ConversationMemory.add_message(phone, "assistant", fallback)
+        ConversationMemory.add_message(telefone, "assistant", fallback)
         return fallback
