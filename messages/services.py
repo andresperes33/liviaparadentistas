@@ -45,8 +45,12 @@ class MessageProcessingService:
             logger.info(f"Message Type: {msg_type_str} | Content keys: {list(msg_obj.keys()) if msg_obj else 'None'}")
             
             content = ""
-            if "conversation" in msg_type_str or "extendedTextMessage" in msg_type_str:
-                content = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text", "")
+            if "conversation" in msg_obj:
+                content = msg_obj.get("conversation")
+            elif "extendedTextMessage" in msg_obj:
+                content = msg_obj.get("extendedTextMessage", {}).get("text", "")
+            elif "messageContextInfo" in msg_obj and "conversation" in msg_obj:
+                content = msg_obj.get("conversation")
 
             user = UserService.get_user_by_phone(sender)
             
