@@ -13,7 +13,7 @@ class TransactionAdmin(admin.ModelAdmin):
         "tipo", 
         "data", 
         "esta_pago", 
-        "user_id", # Mostra o ID do usuário
+        "user", # Referência ao objeto User
         "identificador", # VP0
         "time" # Timestamp MS
     )

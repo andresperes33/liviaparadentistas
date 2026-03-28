@@ -2,6 +2,7 @@
 
 # Migrate the database
 echo "Executing migrations..."
+python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
 # Collect static files
