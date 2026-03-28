@@ -21,7 +21,10 @@ class MessageProcessingService:
                 message_item = data
                 
             from_me = message_item.get("key", {}).get("fromMe", False)
+            logger.info(f"Message fromMe: {from_me} | Sender: {message_item.get('key', {}).get('remoteJid')}")
+            
             if from_me:
+                logger.info("Ignoring message because it is fromMe")
                 return
 
             remote_jid = message_item.get("key", {}).get("remoteJid", "")
