@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('livia_messages', '0001_initial'),
+        ('bot_messages', '0001_initial'),
         ('transactions', '0001_initial'),
     ]
 
