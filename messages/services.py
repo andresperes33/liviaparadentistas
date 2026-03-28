@@ -31,8 +31,8 @@ class MessageProcessingService:
             sender = remote_jid.split("@")[0]
             
             # Prevenir loop caso a Evolution API repasse a própria mensagem da Livia
-            if sender == "553898781988":
-                return
+            # if sender == "553898781988":
+            #     return
                 
             msg_obj = message_item.get("message", {})
             if not msg_obj:
