@@ -3,42 +3,42 @@ from .models import Transaction
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    # Metodos para forçar nomes EXATAMENTE em minúsculo (estilo Banco de Dados)
+    # Métodos para forçar nomes em MAIÚSCULO (igual à tabela de usuários)
     def _id(self, obj): return obj.id
-    _id.short_description = 'id'
+    _id.short_description = 'ID'
     
     def _created_at(self, obj): return obj.created_at
-    _created_at.short_description = 'created_at'
+    _created_at.short_description = 'CREATED_AT'
     
     def _descricao(self, obj): return obj.descricao
-    _descricao.short_description = 'descricao'
+    _descricao.short_description = 'DESCRIÇÃO'
     
     def _categoria(self, obj): return obj.categoria
-    _categoria.short_description = 'categoria'
+    _categoria.short_description = 'CATEGORIA'
     
     def _valor(self, obj): return obj.valor
-    _valor.short_description = 'valor'
+    _valor.short_description = 'VALOR'
     
     def _tipo(self, obj): return obj.tipo
-    _tipo.short_description = 'tipo'
+    _tipo.short_description = 'TIPO'
     
     def _data(self, obj): return obj.data
-    _data.short_description = 'data'
+    _data.short_description = 'DATA'
     
     def _esta_pago(self, obj): return obj.esta_pago
-    _esta_pago.short_description = 'esta_pago'
+    _esta_pago.short_description = 'ESTA_PAGO'
     _esta_pago.boolean = True
     
     def _user_id(self, obj): return obj.user.id if obj.user else None
-    _user_id.short_description = 'user_id'
+    _user_id.short_description = 'USER_ID'
     
     def _identificador(self, obj): return obj.identificador
-    _identificador.short_description = 'identificador'
+    _identificador.short_description = 'IDENTIFICADOR'
     
     def _time(self, obj): return obj.time
-    _time.short_description = 'time'
+    _time.short_description = 'TIME'
 
-    # Lista de exibição com os nomes forçados em minúsculo
+    # Lista de exibição com os nomes em MAIÚSCULO
     list_display = (
         '_id', 
         '_created_at', 
