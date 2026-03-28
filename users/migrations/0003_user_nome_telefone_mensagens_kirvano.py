@@ -1,6 +1,7 @@
-# Generated manually on 2026-03-28
+# Migration robusta com RunSQL + IF NOT EXISTS
+# Garante que as colunas são criadas mesmo que o historico de migrations esteja inconsistente
 
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
@@ -10,24 +11,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='user',
-            name='nome',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='nome'),
-        ),
-        migrations.AddField(
-            model_name='user',
-            name='telefone',
-            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='telefone'),
-        ),
-        migrations.AddField(
-            model_name='user',
-            name='mensagens',
-            field=models.IntegerField(default=0, verbose_name='mensagens'),
-        ),
-        migrations.AddField(
-            model_name='user',
-            name='kirvano_user_id',
-            field=models.CharField(blank=True, max_length=100, null=True),
+        migrations.RunSQL(
+            sql=[
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS nome VARCHAR(255);",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS telefone VARCHAR(20);",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mensagens INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS kirvano_user_id VARCHAR(100);",
+            ],
+            reverse_sql=[
+                "ALTER TABLE users DROP COLUMN IF EXISTS nome;",
+                "ALTER TABLE users DROP COLUMN IF EXISTS telefone;",
+                "ALTER TABLE users DROP COLUMN IF EXISTS mensagens;",
+                "ALTER TABLE users DROP COLUMN IF EXISTS kirvano_user_id;",
+            ]
         ),
     ]
