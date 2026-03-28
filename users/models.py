@@ -2,7 +2,7 @@ import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
-class CustomUserManager(BaseUserManager):
+class UserManager(BaseUserManager):
     def create_user(self, telefone, password=None, **extra_fields):
         if not telefone:
             raise ValueError('O Telefone é obrigatório')
@@ -16,7 +16,7 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(telefone, password, **extra_fields)
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     # Removendo campos padrão que não estão no print do cliente para o Admin, 
     # mas mantendo na estrutura para compatibilidade com Django
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
@@ -35,7 +35,7 @@ class CustomUser(AbstractUser):
     kirvano_user_id = models.CharField(max_length=100, null=True, blank=True)
     assinatura_status = models.CharField(max_length=50, default='inativa')
 
-    objects = CustomUserManager()
+    objects = UserManager()
 
     USERNAME_FIELD = 'telefone'
     REQUIRED_FIELDS = []
