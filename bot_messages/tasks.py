@@ -1,7 +1,7 @@
 from celery import shared_task
 from integrations.openai_client import openai_client
 from integrations.evolution_client import evolution_client
-from messages.models import Message
+from bot_messages.models import Message
 import logging
 
 logger = logging.getLogger("django")

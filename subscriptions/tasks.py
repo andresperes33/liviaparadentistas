@@ -2,7 +2,7 @@ from celery import shared_task
 from .models import KirvanoWebhookLog
 from users.models import User
 from integrations.evolution_client import evolution_client
-from messages.models import Message
+from bot_messages.models import Message
 from transactions.models import Transaction
 from django.utils.dateparse import parse_datetime
 import logging

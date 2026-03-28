@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'users',
     'subscriptions',
     'transactions',
-    'messages.apps.MessagesConfig',
+    'bot_messages.apps.MessagesConfig',
     'integrations',
 ]
 

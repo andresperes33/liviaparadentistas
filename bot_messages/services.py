@@ -1,10 +1,10 @@
 import logging
-from messages.models import Message
+from bot_messages.models import Message
 from users.services import UserService
 from subscriptions.services import SubscriptionService
 from transactions.models import Transaction
 from integrations.evolution_client import evolution_client
-from messages.tasks import process_audio_message, process_image_message
+from bot_messages.tasks import process_audio_message, process_image_message
 from agents.bot import LiviaAgentService
 from agents.router_bot import LiviaRouterBot
 

@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Mensagem',
                 'verbose_name_plural': 'Mensagens',
-                'db_table': 'messages',
+                'db_table': 'bot_messages',
                 'ordering': ['-created_at'],
             },
         ),
